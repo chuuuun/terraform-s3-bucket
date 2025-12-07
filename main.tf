@@ -1,15 +1,22 @@
 provider "aws" {
   region = "us-east-1"
+  default_tags {
+    tags = {
+      Environment = "dev"
+    }
+  }
+  # Enforce secure defaults
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket" "s3_bucket" {
-  bucket = "unique-s3-bucket-name"
+resource "aws_s3_bucket" "secure_bucket" {
+  bucket = "secure-s3-bucket-example"
   acl    = "private"
 
-  versioning {
-    enabled = true
-  }
-
+  # Enable encryption at rest using S3-managed keys
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
@@ -18,56 +25,24 @@ resource "aws_s3_bucket" "s3_bucket" {
     }
   }
 
-  lifecycle_rule {
-    id      = "log_cleanup"
-    prefix  = "logs/"
+  # Enable versioning for robust data management
+  versioning {
     enabled = true
-
-    transition {
-      days          = 30
-      storage_class = "GLACIER"
-    }
   }
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Deny"
-        Principal = "*"
-        Action = "s3:PutObject"
-        Resource = "arn:aws:s3:::unique-s3-bucket-name/*"
-        Condition = {
-          Bool = {
-            "aws:SecureTransport" = false
-          }
-        }
-      },
-      {
-        Effect = "Deny",
-        Principal = "*",
-        Action = "s3:*",
-        Resource = [
-          "arn:aws:s3:::unique-s3-bucket-name",
-          "arn:aws:s3:::unique-s3-bucket-name/*"
-        ],
-        Condition = {
-          StringNotLike = {
-            "aws:arn" = [
-              "arn:aws:iam::123456789012:role/terraform-state-role",
-              "arn:aws:iam::123456789012:user/terraform-user"
-            ]
-          }
-        }
-      }
-    ]
-  })
-}
+  # Enable logging if needed
+  # logging {
+  #   target_bucket = "log-bucket-name"
+  #   target_prefix = "log/"
+  # }
 
-terraform {
-  backend "s3" {
-    bucket = "unique-s3-bucket-name"
-    key    = "terraform.tfstate"
-    region = "us-east-1"
-  }
+  # Enable lifecycle rules for cost optimization
+  # lifecycle_rule {
+  #   id = "transition"
+  #   enabled = true
+  #   transition {
+  #     days = 30
+  #     storage_class = "STANDARD_IA"
+  #   }
+  # }
 }

@@ -1,0 +1,21 @@
+name: Terraform Init
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform-init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform-wrapper: false
+
+      - name: Terraform Init
+        run: terraform init
