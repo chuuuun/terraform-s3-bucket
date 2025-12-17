@@ -1,5 +1,0 @@
-*.tfstate
-*.tfstate.*
-*.tfvars
-*.backup
-*.log

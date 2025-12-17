@@ -1,22 +1,15 @@
 provider "aws" {
   region = "us-east-1"
-  default_tags {
-    tags = {
-      Environment = "dev"
-    }
-  }
-  # Enforce secure defaults
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket" "secure_bucket" {
-  bucket = "secure-s3-bucket-example"
+resource "aws_s3_bucket" "my_versioned_bucket" {
+  bucket = "my-unique-bucket-name"
   acl    = "private"
 
-  # Enable encryption at rest using S3-managed keys
+  versioning {
+    enabled = true
+  }
+
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
@@ -25,24 +18,18 @@ resource "aws_s3_bucket" "secure_bucket" {
     }
   }
 
-  # Enable versioning for robust data management
-  versioning {
-    enabled = true
+  lifecycle_rule {
+    id = "delete_after_365_days"
+    prefix = ""
+    status = "Enabled"
+
+    transition {
+      days = 90
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 365
+    }
   }
-
-  # Enable logging if needed
-  # logging {
-  #   target_bucket = "log-bucket-name"
-  #   target_prefix = "log/"
-  # }
-
-  # Enable lifecycle rules for cost optimization
-  # lifecycle_rule {
-  #   id = "transition"
-  #   enabled = true
-  #   transition {
-  #     days = 30
-  #     storage_class = "STANDARD_IA"
-  #   }
-  # }
 }
